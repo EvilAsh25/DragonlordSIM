@@ -61,8 +61,8 @@ def simulate_advanced():
         filename = tk.filedialog.asksaveasfilename(initialdir=os.getcwd(), title="Save CSV File",
                                                    filetypes=[('CSV File', '*.csv')], defaultextension='.csv')
         if filename:
-            writeToLog(f'---------------- Level: {combo_level.get()} [{combo_name.get().split()[0]}] ----------------')
-            writeToLog(f'-- HP:{hero.maxHP} | MP:{hero.maxMP} | ATK:{hero.ATK} | DEF:{hero.DEF} | AGI:{hero.AGI} --\n')
+            writeToLog(f'------------------ Level: {combo_level.get()} [{combo_name.get().split()[0]}] ------------------')
+            writeToLog(f'---- HP:{hero.maxHP} | MP:{hero.maxMP} | ATK:{hero.ATK} | DEF:{hero.DEF} | AGI:{hero.AGI} ----\n')
 
             startHP_range = int(entry_startHP2.get()) - int(entry_startHP.get())
             startMP_range = int(entry_startMP2.get()) - int(entry_startMP.get())
@@ -81,7 +81,7 @@ def simulate_advanced():
                          ['Trials', entry_sim.get()],
                          ['Start HP', 'Start MP', 'Heal@', "Wins", "Total Attacks Wins", "Total Damage Wins",
                           "Total Rounds Wins", "Total Rounds Losses", "Total Enemy First", "Total Enemy First Wins",  "Premature Deaths"]]
-            writeToLog(f'------ Running {total_sims} x {int(entry_sim.get())} trials ------')
+            writeToLog(f'----------- Running {total_sims} x {int(entry_sim.get())} trials -----------')
             button_sim2.config(text="Running Simulation...", )
             button_sim2['state'] = 'disabled'
             start_time = time.time()
@@ -102,7 +102,8 @@ def simulate_advanced():
                         writeToLog(data)
                         full_data.append(data)
 
-            writeToLog(f'\n----------- Execution time: {round((time.time() - start_time), 2)} seconds -----------\n')
+            writeToLog(f'\nResults saved in: {filename}')
+            writeToLog(f'------------- Execution time: {round((time.time() - start_time), 2)} seconds -------------\n')
             button_sim2.config(text="Simulate Multi")
             button_sim2['state'] = 'normal'
             writeCSV(full_data, filename)
@@ -116,7 +117,7 @@ def updateStatsCallback(event):
     # Stats [S HP, S MP, ATK, DEF, STR, AGI, MAX HP, MAX MP]
     level = int(combo_level.get())
     name = combo_name.current()
-    #["STR+HP [d,t,J,Z]", "STR+AGI [f,v,L,(]", "HP+AGI", "STR+MP", "AGI+MP", "HP+MP"]
+    # ["STR+HP [d,t,J,Z]", "STR+AGI [f,v,L,(]", "HP+AGI", "STR+MP", "AGI+MP", "HP+MP"]
     if name == 0 or name == 1 or name == 3:
         hero.STR = strength.get(level)
     else:
@@ -377,7 +378,7 @@ window.mainloop()
 dmg_array = np.array([])
 agi = 18
 for x in range(10000):
-    dmg = battle.random_test(agi, 50)
+    dmg = battle.enemy_initiative_test(agi, 50)
     #dmg = enemy_initiative(hero.STR, 200)
     #dmg = enemy_attack(hero.ATK, 200)
     dmg_array = np.append(dmg_array, dmg)

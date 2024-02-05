@@ -8,10 +8,11 @@ rng = np.random.default_rng()
 HeroStats = rt.recordtype('HeroStats', ['startHP', 'startMP', 'ATK', 'DEF', 'STR', 'AGI', 'maxHP', 'maxMP', 'armorType'])
 EnemyStats = namedtuple('EnemyStats', ['name', 'maxHP', 'ATK', 'AGI'])
 
-# returns value between 0 to max_rng
+# returns value from min_rng to max_rng
 def get_rng(min_rng, max_rng):
     return rng.integers(min_rng, max_rng + 1)
 
+# calculates the maximum damage an enemy attack can do
 def max_damage(attack, defense):
     base = attack - (defense // 2)
     dmg = (((base + 1) * 255) // 256 + base) // 4
@@ -20,6 +21,7 @@ def max_damage(attack, defense):
     else:
         return dmg
 
+# calculates the minimum damage an enemy attack can do
 def min_damage(attack, defense):
     base = attack - (defense // 2)
     dmg = (((base + 1) * 0) // 256 + base) // 4
@@ -28,6 +30,9 @@ def min_damage(attack, defense):
     else:
         return dmg
 
+# calculates the minimum damage an enemy breath attack can do
+# breath types: 0 = weak, 1 = strong
+# armor types: 0,1 = no protection, 2 = protection
 def min_damage_breath(breath, armor):
     damage = 0
     if breath == 1:
@@ -39,6 +44,9 @@ def min_damage_breath(breath, armor):
     else:
         return damage
 
+# calculates the maximum damage an enemy breath attack can do
+# breath types: 0 = weak, 1 = strong
+# armor types: 0,1 = no protection, 2 = protection
 def max_damage_breath(breath, armor):
     damage = 0
     if breath == 1:
@@ -50,10 +58,14 @@ def max_damage_breath(breath, armor):
     else:
         return damage
 
-def enemy_attack(attack, defense, seed=255):
+# simulates an enemy attack
+def enemy_attack(attack, defense):
     base = attack - (defense // 2)
     return (((base + 1) * get_rng(0, 255)) // 256 + base) // 4
 
+# simulates an enemy breath attack
+# breath types: 0 = weak, 1 = strong
+# armor types: 0,1 = no protection, 2 = protection
 def enemy_breath(breath, armor):
     damage = 0
     # Type 0-weak, 1-strong
@@ -66,10 +78,12 @@ def enemy_breath(breath, armor):
     else:
         return damage
 
+# simulates the heroes attack
 def hero_attack(attack, agility):
     base = attack - (agility // 2)
     return (((base + 1) * get_rng(0, 255)) // 256 + base) // 4
 
+# calculates the chances that the enemy will go first
 def enemy_initiative(hero_agi, enemy_agi):
     e_agi = enemy_agi//4
     if hero_agi >= e_agi:
@@ -77,12 +91,11 @@ def enemy_initiative(hero_agi, enemy_agi):
     else:
         return 1 - ((1 - ((e_agi - hero_agi) / e_agi)) / 2)
 
+# simulates if the enemy will go first
 def enemy_initiative_test(hero_agi, enemy_agi):
     return (hero_agi * get_rng(0, 255)) <= (enemy_agi * get_rng(0, 63))
 
-def random_test(hero_agi, enemy_agi):
-    return (hero_agi * get_rng(0, 255)) <= (enemy_agi * get_rng(0, 255))
-
+# simulates battles, and returns the battle data
 def enemy_battle(hero_stats, enemy_stats, trials, heal_threshold, smart):
     # Enemy Stats [HP, ATK, AGI]
     # Hero Stats [S HP, S MP, ATK, DEF, STR, AGI, MAX HP, MAX MP, ARMOR]
@@ -110,22 +123,22 @@ def enemy_battle(hero_stats, enemy_stats, trials, heal_threshold, smart):
         while (hero_hp > 0) and (enemy_hp > 0):
             if verbose: returnString += f'[[Hero: HP: {hero_hp} MP: {hero_mp}], [Dragonlord 2: HP: {enemy_hp}]]\n'
             # Hero's Turn
-            # Check for preempt
+            # Skip turn if preempt
             if not preempt:
                 rounds += 1
                 # Choose to either Heal or attack, also check if enemy is almost dead
                 if ((hero_hp < (heal_threshold+1)) and (hero_mp > 9)) and not \
                         (smart and enemy_hp <= min_damage(hero_stats.ATK, enemy_stats.AGI)):
-                    # Healmore
+                    # Choose Healmore
                     hero_mp -= 10
-                    heal = get_rng(85, 101)  # Healmore range is 85 to 100
+                    heal = get_rng(85, 100)  # Healmore range is 85 to 100
                     # Check if it hits max HP
                     if (hero_hp + heal) > hero_stats.maxHP:
                         heal = hero_stats.maxHP - hero_hp
                     hero_hp += heal
                     if verbose: returnString += f'Hero casts HEALMORE for {heal} HP\n'
                 else:
-                    # Attack
+                    # Choose Attack
                     hero_dmg = hero_attack(hero_stats.ATK, enemy_stats.AGI)
                     enemy_hp -= hero_dmg
                     round_damage += hero_dmg
@@ -135,14 +148,16 @@ def enemy_battle(hero_stats, enemy_stats, trials, heal_threshold, smart):
                         if verbose: returnString += f'Hero wins!\n'
                         break
             # Dragonlord's Turn
-            # Determine if Fire Breath or Physical (50/50)
             if preempt:
                 preempt = False
                 if verbose: returnString += f'Dragonlord goes first!\n'
+            # Determine if Fire Breath or Physical (50/50)
             if get_rng(0, 1):
+                # Choose Physical
                 enemy_dmg = enemy_attack(enemy_stats.ATK, hero_stats.DEF)
                 if verbose: returnString += f'Dragonlord Attacks! {enemy_dmg}\n'
             else:
+                # Choose Fire Breath
                 enemy_dmg = enemy_breath(1, hero_stats.armorType)
                 if verbose: returnString += f'Dragonlord breaths fire! {enemy_dmg}\n'
             hero_hp -= enemy_dmg
